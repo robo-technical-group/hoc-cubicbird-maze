@@ -2,7 +2,8 @@
     "name": "hoc-cubicbird-maze",
     "description": "",
     "dependencies": {
-        "device": "*"
+        "device": "*",
+        "pxt-summary": "github:felixtsu/pxt-summary#239220c086783a94d8ea2c182e6f2a32ba0ab03c"
     },
     "files": [
         "main.blocks",

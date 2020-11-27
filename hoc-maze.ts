@@ -114,6 +114,9 @@ namespace maze {
         `  
     }
 
+    let _levelResults :summary.ProblemResult[] = []
+    let _challengerName :string = '方块鸟'
+
     let runnerSprite : Sprite = null;
     const RUNNER_SPRITE_KIND = SpriteKind.create();
 
@@ -133,13 +136,12 @@ namespace maze {
     let levelCallbacks : (() => void) [] = [];
 
     function directionAvailable(direction: CollisionDirection) {
-
-
         return true
     }   
 
-    //% block="将速度设定 %speed"
-    export function setSpeed(speed:GameSpeed) {
+    //% block="我是 %name, 将速度设定 %speed"
+    export function startGame(name:string, speed:GameSpeed) {
+        _challengerName = name
         playSpeed = speed
     }
 
@@ -242,7 +244,19 @@ namespace maze {
             if (!levelFinished) {           
                 runnerSprite.say("没有指令了，不知道接下来要做什么")
                 pauseImpl(1000)
-            } 
+                _levelResults.push({
+                    line:"Level " + level,
+                    isCorrect:false,
+                    oneline:true
+                })
+                levelFinished = true
+            } else {
+                _levelResults.push({
+                    line:"Level " + level,
+                    isCorrect:true,
+                    oneline:true
+                })
+            }
         }
     }
 
@@ -327,7 +341,26 @@ namespace maze {
             initMaze(_mazeLevel)
             while(!levelFinished) ;
         }
-        game.over(true)
+
+        summary.setUpSummaryScene(_challengerName, img`
+            . . . . f f f f . . . .
+            . . f f e e e e f f . .
+            . f f e e e e e e f f .
+            f f f f 4 e e e f f f f
+            f f f 4 4 4 e e f f f f
+            f f f 4 4 4 4 e e f f f
+            f 4 e 4 4 4 4 4 4 e 4 f
+            f 4 4 f f 4 4 f f 4 4 f
+            f e 4 d d d d d d 4 e f
+            . f e d d b b d d e f .
+            . f f e 4 4 4 4 e f f .
+            e 4 f b 1 1 1 1 b f 4 e
+            4 d f 1 1 1 1 1 1 f d 4
+            4 4 f 6 6 6 6 6 6 f 4 4
+            . . . f f f f f f . . .
+            . . . f f . . f f . . .
+        `)
+        summary.textUp(_levelResults)
     })
     
 }
