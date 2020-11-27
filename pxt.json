@@ -3,7 +3,7 @@
     "description": "",
     "dependencies": {
         "device": "*",
-        "pxt-summary": "github:felixtsu/pxt-summary#239220c086783a94d8ea2c182e6f2a32ba0ab03c"
+        "pxt-summary": "github:felixtsu/pxt-summary#v0.0.2"
     },
     "files": [
         "main.blocks",
