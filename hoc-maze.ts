@@ -122,11 +122,16 @@ namespace maze {
     let _mazeLevel:number = 1;
     let _currentDirection:CollisionDirection = CollisionDirection.Bottom;
 
-    let levelTilemaps :tiles.TileMapData[] = [tilemap`level`];
+    const level1tilemap =tilemap`level`
+    const level2tilemap =tilemap`level_0`
+
+    let levelTilemaps :tiles.TileMapData[] = [level1tilemap, level2tilemap];
 
     let levelCallbacks : (() => void) [] = [];
 
     function directionAvailable(direction: CollisionDirection) {
+
+
         return true
     }   
 
@@ -137,7 +142,12 @@ namespace maze {
 
     //% block="当进入第一关"
     export function onLevelOne(cb:()=>void) {
-        levelCallbacks[0] = cb
+        levelCallbacks.set(0, cb)
+    }
+
+    //% block="当进入第二关"
+    export function onLevelTwo(cb:()=>void) {
+        levelCallbacks.set(1, cb)
     }
 
     function pauseImpl(millis : number) {
@@ -177,12 +187,45 @@ namespace maze {
                 . . . . . f f f f f f . . . . .
                 . . . . . f f . . f f . . . . .
             `, RUNNER_SPRITE_KIND)
+        } else {
+            runnerSprite.say("")
+            runnerSprite.setImage(img`
+                . . . . . . f f f f . . . . . .
+                . . . . f f f 2 2 f f f . . . .
+                . . . f f f 2 2 2 2 f f f . . .
+                . . f f f e e e e e e f f f . .
+                . . f f e 2 2 2 2 2 2 e e f . .
+                . . f e 2 f f f f f f 2 e f . .
+                . . f f f f e e e e f f f f . .
+                . f f e f b f 4 4 f b f e f f .
+                . f e e 4 1 f d d f 1 4 e e f .
+                . . f e e d d d d d d e e f . .
+                . . . f e e 4 4 4 4 e e f . . .
+                . . e 4 f 2 2 2 2 2 2 f 4 e . .
+                . . 4 d f 2 2 2 2 2 2 f d 4 . .
+                . . 4 4 f 4 4 5 5 4 4 f 4 4 . .
+                . . . . . f f f f f f . . . . .
+                . . . . . f f . . f f . . . . .
+            `)
         }
+
+        _currentDirection = CollisionDirection.Bottom
         
         tiles.setTilemap(levelTilemaps[level - 1])
         tiles.placeOnRandomTile(runnerSprite, sprites.dungeon.stairNorth)
 
-        levelCallbacks[level-1]()
+        console.log(levelCallbacks.length)
+        console.log(level - 1)
+
+        // if (levelCallbacks[level - 1] == null) {
+            // runnerSprite.say("没有指令，不知道接下来要做什么")
+        // } else {
+            levelCallbacks[level-1]()
+        // }
+
+        if (_mazeLevel == level) {            
+            runnerSprite.say("没有指令，不知道接下来要做什么")
+        } 
     }
 
 
@@ -253,13 +296,11 @@ namespace maze {
 
 
     scene.onOverlapTile(RUNNER_SPRITE_KIND, sprites.dungeon.doorOpenNorth, function (sprite, location) {
-        finishedCurrentLevel()
+        finishedCurrentLevel()    
     })
 
     control.runInParallel(function() {
-        while(levelCallbacks.length == 0) {
-            
-        }
+        while(levelCallbacks.length == 0) ;
         initMaze(_mazeLevel)    
     })
     
