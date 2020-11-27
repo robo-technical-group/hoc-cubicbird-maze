@@ -3,8 +3,11 @@
 namespace maze {
 
     export enum GameSpeed {
+        //%block="正常速度"
         NORMAL = 1,
+        //%block="较高速度"
         FAST = 4,
+        //%block="最高速度"
         FASTER = 16
     }
 
@@ -115,7 +118,7 @@ namespace maze {
     const RUNNER_SPRITE_KIND = SpriteKind.create();
 
     let noPause :boolean = false;
-    const DEFAULT_STEP_PAUSE_MILLIS = 1000;
+    const DEFAULT_STEP_PAUSE_MILLIS = 500;
 
     let playSpeed : number = GameSpeed.NORMAL;
 
@@ -135,7 +138,7 @@ namespace maze {
         return true
     }   
 
-    //% block
+    //% block="将速度设定 %speed"
     export function setSpeed(speed:GameSpeed) {
         playSpeed = speed
     }
@@ -159,13 +162,22 @@ namespace maze {
 
     
     function finishedCurrentLevel() {
-        if (_mazeLevel == levelTilemaps.length) {
-            game.over(true)
-        } else {
-            _mazeLevel += 1
-            initMaze(_mazeLevel)
+        levelFinished = true
+    }
+
+    function runnerLoading() {
+        let word = "loading"
+        for (let i = 0; i < 6; i++) {
+            word += "."
+            runnerSprite.say(word)
+            pauseImpl(200)
+            if (i == 2) {
+                word = "loading"
+            }    
         }
     }
+
+    let levelFinished :boolean = false;
 
     function initMaze(level:number) {
         if (runnerSprite == null) {
@@ -214,18 +226,24 @@ namespace maze {
         tiles.setTilemap(levelTilemaps[level - 1])
         tiles.placeOnRandomTile(runnerSprite, sprites.dungeon.stairNorth)
 
-        console.log(levelCallbacks.length)
-        console.log(level - 1)
+        runnerLoading()
 
-        // if (levelCallbacks[level - 1] == null) {
-            // runnerSprite.say("没有指令，不知道接下来要做什么")
-        // } else {
+        if (levelCallbacks[level - 1] == null) {
+            runnerSprite.say("第" + level + "关的程序载入失败")
+            pauseImpl(2000)
+            runnerSprite.say("请在'当进入第" + level + "关'内写好程序")
+            pauseImpl(5000)
+        } else {
+            runnerSprite.say("开始按程序运行")        
+            pauseImpl(1000)
+
             levelCallbacks[level-1]()
-        // }
 
-        if (_mazeLevel == level) {            
-            runnerSprite.say("没有指令，不知道接下来要做什么")
-        } 
+            if (!levelFinished) {           
+                runnerSprite.say("没有指令了，不知道接下来要做什么")
+                pauseImpl(1000)
+            } 
+        }
     }
 
 
@@ -302,7 +320,14 @@ namespace maze {
     control.runInParallel(function() {
         while(levelCallbacks.length == 0) ;
         initMaze(_mazeLevel)    
+
+        while (_mazeLevel != levelTilemaps.length) {
+            _mazeLevel += 1
+            levelFinished = false
+            initMaze(_mazeLevel)
+            while(!levelFinished) ;
+        }
+        game.over(true)
     })
     
-
 }
