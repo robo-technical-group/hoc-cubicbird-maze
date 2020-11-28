@@ -502,8 +502,102 @@ namespace maze {
         finishedCurrentLevel()    
     })
 
+    let isNavigationMode = true
+    let needIntroduction = true
+
+    let _navigatingLevel = 0
+    const START_POINT_SPRITE_IN_NAVI_SPRITE_KIND = SpriteKind.create()
+
+    function destroyAllNaviSprites() {
+        for (let sprite of sprites.allOfKind(START_POINT_SPRITE_IN_NAVI_SPRITE_KIND)) {
+            sprite.destroy()
+        }
+    }
+
+    let navigatingTimestamp = 0
+
+    function navigateLevel(level : number) {
+        settings.writeNumber("navigatingLevel", level)
+        destroyAllNaviSprites()
+        let startPointSprite = sprites.create(img`
+            . . . . . . 5 . 5 . . . . . . .
+            . . . . . f 5 5 5 f f . . . . .
+            . . . . f 1 5 2 5 1 6 f . . . .
+            . . . f 1 6 6 6 6 6 1 6 f . . .
+            . . . f 6 6 f f f f 6 1 f . . .
+            . . . f 6 f f d d f f 6 f . . .
+            . . f 6 f d f d d f d f 6 f . .
+            . . f 6 f d 3 d d 3 d f 6 f . .
+            . . f 6 6 f d d d d f 6 6 f . .
+            . f 6 6 f 3 f f f f 3 f 6 6 f .
+            . . f f d 3 5 3 3 5 3 d f f . .
+            . . f d d f 3 5 5 3 f d d f . .
+            . . . f f 3 3 3 3 3 3 f f . . .
+            . . . f 3 3 5 3 3 5 3 3 f . . .
+            . . . f f f f f f f f f f . . .
+            . . . . . f f . . f f . . . . .
+        `, START_POINT_SPRITE_IN_NAVI_SPRITE_KIND)
+        tiles.setTilemap(levelTilemaps[level])
+
+        tiles.placeOnRandomTile(startPointSprite, sprites.dungeon.stairNorth)
+
+        if (needIntroduction) {
+            needIntroduction = false
+            game.splash("按左右方向键切换浏览关卡")
+            game.splash("按menu开始正式挑战")
+        }
+
+        navigatingTimestamp = game.runtime()
+        
+        game.splash("第" + (level+1).toString() + "关地图")
+    }
+
+    // 万一用户不记得如何操作，每隔10秒告诉他一下menu可以开始挑战
+    forever(function() {
+        if (isNavigationMode) {
+            if (game.runtime() - navigatingTimestamp > 10000) {
+                game.splash("按左右方向键切换浏览关卡")
+                game.splash("按menu开始正式挑战")   
+                navigatingTimestamp = game.runtime()     
+            }
+        }
+        pause(100)
+    })
+
+    controller.left.onEvent(ControllerButtonEvent.Pressed, function(){
+        if (_navigatingLevel > 0) {
+            _navigatingLevel -= 1
+            navigateLevel(_navigatingLevel)
+        }
+    })
+
+    controller.right.onEvent(ControllerButtonEvent.Pressed, function(){
+        if (_navigatingLevel < levelTilemaps.length - 1) {
+            _navigatingLevel += 1
+            navigateLevel(_navigatingLevel)
+        }
+    })
+
+    controller.menu.onEvent(ControllerButtonEvent.Pressed, function(){
+        if (!isNavigationMode) {
+            return
+        }
+        if (game.ask("开始挑战")) {
+            isNavigationMode = false
+            destroyAllNaviSprites()
+        }
+    })
+
     control.runInParallel(function() {
-        while(levelCallbacks.length == 0) ;
+        summary.introScreen(1000)
+
+        if (settings.exists("navigatingLevel")) {
+            _navigatingLevel = settings.readNumber("navigatingLevel") 
+        }
+        navigateLevel(_navigatingLevel)
+        while(isNavigationMode) {
+            pause(100)
+        }
         initMaze(_mazeLevel)    
 
         while (_mazeLevel != levelTilemaps.length) {
@@ -514,22 +608,22 @@ namespace maze {
         }
 
         summary.setUpSummaryScene(_challengerName, img`
-            . . . . f f f f . . . .
-            . . f f e e e e f f . .
-            . f f e e e e e e f f .
-            f f f f 4 e e e f f f f
-            f f f 4 4 4 e e f f f f
-            f f f 4 4 4 4 e e f f f
-            f 4 e 4 4 4 4 4 4 e 4 f
-            f 4 4 f f 4 4 f f 4 4 f
-            f e 4 d d d d d d 4 e f
-            . f e d d b b d d e f .
-            . f f e 4 4 4 4 e f f .
-            e 4 f b 1 1 1 1 b f 4 e
-            4 d f 1 1 1 1 1 1 f d 4
-            4 4 f 6 6 6 6 6 6 f 4 4
-            . . . f f f f f f . . .
-            . . . f f . . f f . . .
+            . . . . . . . . . . . . . . . .
+            . . . . . . . . . . . . . . . .
+            . . . 1 1 1 1 1 1 1 1 1 1 . . .
+            . . 1 4 4 4 4 4 4 4 4 4 1 . . .
+            . 1 5 4 4 4 4 4 4 4 4 4 1 . . .
+            1 5 5 4 4 f f 4 4 1 1 1 1 1 1 1
+            5 5 5 4 4 f f 4 4 5 5 5 5 5 5 .
+            . . . 4 4 4 4 4 4 5 5 5 5 5 . .
+            . . . 4 4 4 4 4 4 5 5 5 5 . . .
+            . . . 4 4 4 4 4 4 5 5 5 1 . . .
+            . . . 4 4 4 4 4 4 5 5 4 1 . . .
+            . . . 4 4 4 4 4 4 5 4 4 1 . . .
+            . . . 9 9 9 7 7 7 7 7 7 1 . . .
+            . . . . 9 9 7 7 7 7 7 7 1 . . .
+            . . . . . 9 7 7 7 7 7 7 1 . . .
+            . . . . . . . . . . . . . . . .
         `)
         summary.textUp(_levelResults)
     })
