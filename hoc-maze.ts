@@ -127,32 +127,195 @@ namespace maze {
 
     let _mazeLevel:number = 1;
     let _currentDirection:CollisionDirection = CollisionDirection.Bottom;
-
+    
+    //地图修改
     const level1tilemap =tilemap`level`
     const level2tilemap =tilemap`level_0`
+    const level3tilemap =tilemap`level_5`
+    const level41tilemap =tilemap`level_1`
+    const level42tilemap =tilemap`level_2`
+    const level43tilemap =tilemap`level_3`
+    const level44tilemap =tilemap`level_4`
+    const level51tilemap =tilemap`level_6`
+    const level52tilemap =tilemap`level_7`
+    const level53tilemap =tilemap`level_8`
+    const level54tilemap =tilemap`level_9`
+    //随机关卡4、5
+    function randomLevel(level:number){
+        let ranNum = randint(0, 2)
+        let ranTilemap 
+        if(level==4){
+            switch(ranNum){
+                case 0:
+                ranTilemap = level41tilemap
+                break
+                case 1:
+                ranTilemap = level42tilemap
+                break
+                case 2:
+                ranTilemap = level43tilemap
+                break
+            }
+        }
+        else{
+            switch(ranNum){
+                case 0:
+                ranTilemap = level51tilemap
+                break
+                case 1:
+                ranTilemap = level52tilemap
+                break
+                case 2:
+                ranTilemap = level53tilemap
+                break
+            }
+        }
+        return ranTilemap
+    }
 
-    let levelTilemaps :tiles.TileMapData[] = [level1tilemap, level2tilemap];
+    let levelTilemaps :tiles.TileMapData[] = [level1tilemap, level2tilemap,level3tilemap,randomLevel(4),randomLevel(5)];
 
     let levelCallbacks : (() => void) [] = [];
-
+    //前方是否可以前进
     function directionAvailable(direction: CollisionDirection) {
-        return true
+       //let frontTileX = 0
+       //let frontTileY = 0
+       let frontTileXDelta = 0
+       let frontTileYDelta = 0
+       switch(direction){
+           case CollisionDirection.Bottom:
+           frontTileYDelta+=16
+           break
+           case CollisionDirection.Top:
+           frontTileYDelta+=-16
+           break
+           case CollisionDirection.Left:
+           frontTileXDelta+=-16
+           break
+           case CollisionDirection.Right:
+           frontTileXDelta+=16
+           break
+        }
+        let frontTileX = (frontTileXDelta+runnerSprite.x)/16
+        let frontTileY = (frontTileYDelta+runnerSprite.y)/16
+
+        if(tiles.tileAtLocationEquals(tiles.getTileLocation(frontTileX, frontTileY), img`
+            b d d d d d d d d d d d d d d c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            d b b b b b b b b b b b b b b c
+            c c c c c c c c c c c c c c c a
+        `)||tiles.tileAtLocationEquals(tiles.getTileLocation(frontTileX, frontTileY), img`
+            6 6 6 c c 6 6 6 6 6 6 c c 6 6 6
+            7 7 7 7 c 7 7 7 7 7 7 7 c 7 7 7
+            7 7 7 6 c 7 7 7 7 7 7 7 c 7 7 7
+            6 6 6 6 c 6 6 6 6 6 6 6 c c 6 6
+            c c c c c c c c c c c c c c c c
+            c 6 7 7 7 7 7 6 c 6 7 7 7 7 7 6
+            c c 6 6 6 6 6 6 c c 6 6 6 6 6 6
+            c c c c c c c c c c c c c c c c
+            6 6 6 c 6 6 6 6 6 6 6 6 c 6 6 6
+            6 6 6 c c 6 6 6 6 6 6 6 c 6 6 6
+            c c c c c c c c c c c c c c c c
+            c 6 6 6 6 6 6 c c 6 6 6 6 6 6 c
+            c c c c c c c c c c c c c c c c
+            6 6 c c 6 6 6 6 6 6 c c 6 6 6 6
+            c c c c c c c c c c c c c c c c
+            c c c c c c c c c c c c c c c c
+        `)||tiles.tileAtLocationEquals(tiles.getTileLocation(frontTileX, frontTileY), img`
+            c c c c c c c c c c c c c c c c
+            c c c c c c c c c c c c c c c c
+            6 6 6 6 c c 6 6 6 6 6 6 c c 6 6
+            c c c c c c c c c c c c c c c c
+            c 6 6 6 6 6 6 c c 6 6 6 6 6 6 c
+            c c c c c c c c c c c c c c c c
+            6 6 6 c 6 6 6 6 6 6 6 c c 6 6 6
+            6 6 6 c 6 6 6 6 6 6 6 6 c 6 6 6
+            c c c c c c c c c c c c c c c c
+            6 6 6 6 6 6 c c 6 6 6 6 6 6 c c
+            6 7 7 7 7 7 6 c 6 7 7 7 7 7 6 c
+            c c c c c c c c c c c c c c c c
+            6 6 c c 6 6 6 6 6 6 6 c 6 6 6 6
+            7 7 7 c 7 7 7 7 7 7 7 c 6 7 7 7
+            7 7 7 c 7 7 7 7 7 7 7 c 7 7 7 7
+            6 6 6 c c 6 6 6 6 6 6 c c 6 6 6
+        `)||tiles.tileAtLocationEquals(tiles.getTileLocation(frontTileX, frontTileY), img`
+            6 7 7 6 c 6 6 c 6 6 c c c 6 c c
+            6 7 7 6 c 7 6 c 6 6 c 6 c 6 c c
+            6 7 7 c c 7 6 c 6 6 c 6 c 6 c c
+            c c c c c 7 6 c c c c 6 c 6 c c
+            c 7 7 6 c 7 6 c 6 6 c 6 c c c c
+            6 7 7 6 c 7 6 c 6 6 c 6 c c c c
+            6 7 7 6 c 6 c c 6 6 c 6 c 6 c c
+            6 7 7 6 c c c c 6 6 c c c 6 c c
+            6 7 7 6 c 6 6 c 6 6 c c c 6 c c
+            6 7 7 6 c 7 6 c 6 6 c 6 c 6 c c
+            6 7 7 6 c 7 6 c 6 6 c 6 c 6 c c
+            c c c c c 7 6 c 6 c c 6 c 6 c c
+            c 7 6 6 c 7 6 c c c c 6 c c c c
+            6 7 7 6 c 7 6 c 6 6 c 6 c c c c
+            6 7 7 6 c 6 c c 6 6 c 6 c 6 c c
+            6 7 7 6 c c c c 6 6 c c c 6 c c
+        `)||tiles.tileAtLocationEquals(tiles.getTileLocation(frontTileX, frontTileY), img`
+            c c 6 c c c 6 6 c c c c 6 7 7 6
+            c c 6 c 6 c 6 6 c c 6 c 6 7 7 6
+            c c c c 6 c 6 6 c 6 7 c 6 7 7 6
+            c c c c 6 c c c c 6 7 c 6 6 7 c
+            c c 6 c 6 c c 6 c 6 7 c c c c c
+            c c 6 c 6 c 6 6 c 6 7 c 6 7 7 6
+            c c 6 c 6 c 6 6 c 6 7 c 6 7 7 6
+            c c 6 c c c 6 6 c 6 6 c 6 7 7 6
+            c c 6 c c c 6 6 c c c c 6 7 7 6
+            c c 6 c 6 c 6 6 c c 6 c 6 7 7 6
+            c c c c 6 c 6 6 c 6 7 c 6 7 7 6
+            c c c c 6 c 6 6 c 6 7 c 6 7 7 c
+            c c 6 c 6 c c c c 6 7 c c c c c
+            c c 6 c 6 c 6 6 c 6 7 c c 7 7 6
+            c c 6 c 6 c 6 6 c 6 7 c 6 7 7 6
+            c c 6 c c c 6 6 c 6 6 c 6 7 7 6
+        `)){
+            return false
+            }
+        else  return true
     }   
 
-    //% block="我是 %name, 将速度设定 %speed"
+    //% block="我是 %name, 将速度设定 %speed" weight="2000"
     export function startGame(name:string, speed:GameSpeed) {
         _challengerName = name
         playSpeed = speed
     }
 
-    //% block="当进入第一关"
+    //% block="当进入第一关" weight="500"
     export function onLevelOne(cb:()=>void) {
         levelCallbacks.set(0, cb)
     }
 
-    //% block="当进入第二关"
+    //% block="当进入第二关" weight="400"
     export function onLevelTwo(cb:()=>void) {
         levelCallbacks.set(1, cb)
+    }
+    //% block="当进入第三关" weight="300"
+    export function onLevelThree(cb:()=>void) {
+        levelCallbacks.set(2, cb)
+    }
+    //% block="当进入第四关" weight="200"
+    export function onLevelFour(cb:()=>void) {
+        levelCallbacks.set(3, cb)
+    }
+    //% block="当进入第五关" weight="100"
+    export function onLevelFive(cb:()=>void) {
+        levelCallbacks.set(4, cb)
     }
 
     function pauseImpl(millis : number) {
@@ -260,7 +423,7 @@ namespace maze {
         }
     }
 
-
+    //朝向前进
     function moveInDirection(direction:CollisionDirection) {
         let directionMeta :DirectionMeta = null
         switch(direction) {
@@ -286,37 +449,45 @@ namespace maze {
         runnerSprite.say('前进')        
     }
     
-    //% block="左转"
+    //% block="左转" weight="1900"
     export function turnLeft() {
         if (_currentDirection == CollisionDirection.Top) {
             _currentDirection = CollisionDirection.Left
+            runnerSprite.setImage(LEFT.spriteImage)
         } else if (_currentDirection == CollisionDirection.Left) {
             _currentDirection = CollisionDirection.Bottom
+            runnerSprite.setImage(DOWN.spriteImage)
         } else if (_currentDirection == CollisionDirection.Bottom) {
             _currentDirection = CollisionDirection.Right
+            runnerSprite.setImage(RIGHT.spriteImage)
         } else {
             _currentDirection = CollisionDirection.Top
+            runnerSprite.setImage(UP.spriteImage)
         }
         runnerSprite.say('左转')
         pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
     }
 
-    //% block="右转"
+    //% block="右转" weight="1800"
     export function turnRight() {
         if (_currentDirection == CollisionDirection.Top) {
             _currentDirection = CollisionDirection.Right
+            runnerSprite.setImage(RIGHT.spriteImage)
         } else if (_currentDirection == CollisionDirection.Right) {
             _currentDirection = CollisionDirection.Bottom
+            runnerSprite.setImage(DOWN.spriteImage)
         } else if (_currentDirection == CollisionDirection.Bottom) {
             _currentDirection = CollisionDirection.Left
+            runnerSprite.setImage(LEFT.spriteImage)
         } else {
             _currentDirection = CollisionDirection.Top
+            runnerSprite.setImage(UP.spriteImage)
         }
         runnerSprite.say('右转')
         pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
     }
 
-    //% block="前进"
+    //% block="前进" weight="1700"
     export function forward() {
         if (directionAvailable(_currentDirection)) {
             moveInDirection(_currentDirection)                
