@@ -331,8 +331,77 @@ namespace maze {
         finishedCurrentLevel()    
     })
 
+    let isNavigationMode = true
+    let needIntroduction = true
+
+    let _navigatingLevel = 0
+    const START_POINT_SPRITE_IN_NAVI_SPRITE_KIND = SpriteKind.create()
+
+    function destroyAllNaviSprites() {
+        for (let sprite of sprites.allOfKind(START_POINT_SPRITE_IN_NAVI_SPRITE_KIND)) {
+            sprite.destroy()
+        }
+    }
+
+    function navigateLevel(level : number) {
+        destroyAllNaviSprites()
+        let startPointSprite = sprites.create(img`
+            . . . . . . 5 . 5 . . . . . . .
+            . . . . . f 5 5 5 f f . . . . .
+            . . . . f 1 5 2 5 1 6 f . . . .
+            . . . f 1 6 6 6 6 6 1 6 f . . .
+            . . . f 6 6 f f f f 6 1 f . . .
+            . . . f 6 f f d d f f 6 f . . .
+            . . f 6 f d f d d f d f 6 f . .
+            . . f 6 f d 3 d d 3 d f 6 f . .
+            . . f 6 6 f d d d d f 6 6 f . .
+            . f 6 6 f 3 f f f f 3 f 6 6 f .
+            . . f f d 3 5 3 3 5 3 d f f . .
+            . . f d d f 3 5 5 3 f d d f . .
+            . . . f f 3 3 3 3 3 3 f f . . .
+            . . . f 3 3 5 3 3 5 3 3 f . . .
+            . . . f f f f f f f f f f . . .
+            . . . . . f f . . f f . . . . .
+        `, START_POINT_SPRITE_IN_NAVI_SPRITE_KIND)
+        tiles.placeOnRandomTile(startPointSprite, sprites.dungeon.stairNorth)
+        tiles.setTilemap(levelTilemaps[level])
+        game.splash("第" + (level+1).toString() + "关地图")
+        if (needIntroduction) {
+            needIntroduction = false
+            game.splash("按左右方向键切换浏览关卡")
+            game.splash("按menu开始正式挑战")
+        }
+    }
+
+    controller.left.onEvent(ControllerButtonEvent.Pressed, function(){
+        if (_navigatingLevel > 0) {
+            _navigatingLevel -= 1
+            navigateLevel(_navigatingLevel)
+        }
+    })
+
+    controller.right.onEvent(ControllerButtonEvent.Pressed, function(){
+        if (_navigatingLevel < levelTilemaps.length - 1) {
+            _navigatingLevel += 1
+            navigateLevel(_navigatingLevel)
+        }
+    })
+
+    controller.menu.onEvent(ControllerButtonEvent.Pressed, function(){
+        if (!isNavigationMode) {
+            return
+        }
+        if (game.ask("开始挑战")) {
+            isNavigationMode = false
+            destroyAllNaviSprites()
+        }
+    })
+
     control.runInParallel(function() {
-        while(levelCallbacks.length == 0) ;
+        navigateLevel(_navigatingLevel)
+        while(isNavigationMode) {
+            pause(100)
+        }
         initMaze(_mazeLevel)    
 
         while (_mazeLevel != levelTilemaps.length) {
