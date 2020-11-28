@@ -343,7 +343,10 @@ namespace maze {
         }
     }
 
+    let navigatingTimestamp = 0
+
     function navigateLevel(level : number) {
+        settings.writeNumber("navigatingLevel", level)
         destroyAllNaviSprites()
         let startPointSprite = sprites.create(img`
             . . . . . . 5 . 5 . . . . . . .
@@ -363,15 +366,32 @@ namespace maze {
             . . . f f f f f f f f f f . . .
             . . . . . f f . . f f . . . . .
         `, START_POINT_SPRITE_IN_NAVI_SPRITE_KIND)
-        tiles.placeOnRandomTile(startPointSprite, sprites.dungeon.stairNorth)
         tiles.setTilemap(levelTilemaps[level])
-        game.splash("第" + (level+1).toString() + "关地图")
+
+        tiles.placeOnRandomTile(startPointSprite, sprites.dungeon.stairNorth)
+
         if (needIntroduction) {
             needIntroduction = false
             game.splash("按左右方向键切换浏览关卡")
             game.splash("按menu开始正式挑战")
         }
+
+        navigatingTimestamp = game.runtime()
+        
+        game.splash("第" + (level+1).toString() + "关地图")
     }
+
+    // 万一用户不记得如何操作，每隔10秒告诉他一下menu可以开始挑战
+    forever(function() {
+        if (isNavigationMode) {
+            if (game.runtime() - navigatingTimestamp > 10000) {
+                game.splash("按左右方向键切换浏览关卡")
+                game.splash("按menu开始正式挑战")   
+                navigatingTimestamp = game.runtime()     
+            }
+        }
+        pause(100)
+    })
 
     controller.left.onEvent(ControllerButtonEvent.Pressed, function(){
         if (_navigatingLevel > 0) {
@@ -398,6 +418,11 @@ namespace maze {
     })
 
     control.runInParallel(function() {
+        summary.introScreen(1000)
+
+        if (settings.exists("navigatingLevel")) {
+            _navigatingLevel = settings.readNumber("navigatingLevel") 
+        }
         navigateLevel(_navigatingLevel)
         while(isNavigationMode) {
             pause(100)
