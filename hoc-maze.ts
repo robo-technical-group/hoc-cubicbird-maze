@@ -10,6 +10,12 @@ namespace maze {
         //%block="最高速度"
         FASTER = 16
     }
+    export enum ObstaleKind{
+        //%block="墙"
+        Wall = 1,
+        //%block="巨石"
+        Stone = 2
+    }
 
     interface DirectionMeta {
         deltaX :number
@@ -17,28 +23,33 @@ namespace maze {
         infoString:string
         spriteImage:Image
     }
+    interface FrontLocation{
+        tileX:number
+        tileY:number
+    }
+
 
     const UP = {
         deltaX : 0,
         deltaY : -16,
         infoString : "上",
         spriteImage:img`
-            . . . . . . f f f f . . . . . .
-            . . . . f f e e e e f f . . . .
-            . . . f e e e f f e e e f . . .
-            . . f f f f f 2 2 f f f f f . .
-            . . f f e 2 e 2 2 e 2 e f f . .
-            . . f e 2 f 2 f f 2 f 2 e f . .
-            . . f f f 2 2 e e 2 2 f f f . .
-            . f f e f 2 f e e f 2 f e f f .
-            . f e e f f e e e e f e e e f .
-            . . f e e e e e e e e e e f . .
-            . . . f e e e e e e e e f . . .
-            . . e 4 f f f f f f f f 4 e . .
-            . . 4 d f 2 2 2 2 2 2 f d 4 . .
-            . . 4 4 f 4 4 4 4 4 4 f 4 4 . .
+            . . . . . . . 5 5 . . . . . . .
+            . . . . . f 5 5 5 5 f . . . . .
+            . . . . f 6 6 6 6 6 6 f . . . .
+            . . . f 6 1 1 1 6 1 6 6 f . . .
+            . . . f 6 6 6 6 6 6 6 6 f . . .
+            . . . f 6 6 6 6 6 6 6 6 f . . .
+            . . . f 6 6 6 6 6 6 6 6 f . . .
+            . . f f 6 6 6 6 6 6 6 6 f f . .
+            . f 6 6 6 f 6 6 6 6 f 6 6 6 f .
+            . . f f f 3 f f f f 3 f f f . .
+            . . . f d 5 3 3 3 3 5 d f . . .
+            . . f d d f 3 3 3 3 f d d f . .
+            . . . f f f 5 3 3 5 f f f . . .
+            . . . . f 3 3 5 5 3 3 f . . . .
+            . . . . f 3 3 3 3 3 3 f . . . .
             . . . . . f f f f f f . . . . .
-            . . . . . f f . . f f . . . . .
         `  
     }
 
@@ -47,21 +58,21 @@ namespace maze {
         deltaY : 0,
         infoString : "右",
         spriteImage:img`
-            . . . . . . f f f f f f . . . .
-            . . . . f f e e e e f 2 f . . .
-            . . . f f e e e e f 2 2 2 f . .
-            . . . f e e e f f e e e e f . .
-            . . . f f f f e e 2 2 2 2 e f .
-            . . . f e 2 2 2 f f f f e 2 f .
-            . . f f f f f f f e e e f f f .
-            . . f f e 4 4 e b f 4 4 e e f .
-            . . f e e 4 d 4 1 f d d e f . .
-            . . . f e e e 4 d d d d f . . .
-            . . . . f f e e 4 4 4 e f . . .
-            . . . . . 4 d d e 2 2 2 f . . .
-            . . . . . e d d e 2 2 2 f . . .
-            . . . . . f e e f 4 5 5 f . . .
-            . . . . . . f f f f f f . . . .
+            . . . . . . . 5 . 5 . . . . . .
+            . . . . . . f 5 5 5 f . . . . .
+            . . . . . f 6 5 5 2 6 f . . . .
+            . . . . f 6 6 1 6 6 6 6 f . . .
+            . . . . f 6 1 6 6 6 6 6 f . . .
+            . . . . f 1 6 6 6 d f d f . . .
+            . . . f f 6 6 6 6 d f d f . . .
+            . . f 6 f 6 6 6 d d 3 d f . . .
+            . . . f f 6 f f d d d f . . . .
+            . . f 6 6 6 f 3 5 f f . . . . .
+            . . . f f f f f 3 3 5 f . . . .
+            . . . . . . f d f 3 3 f . . . .
+            . . . . . . f d f 3 f . . . . .
+            . . . . . f d f 3 5 3 f . . . .
+            . . . . . . f f 3 3 f f . . . .
             . . . . . . . f f f . . . . . .
         `  
     }
@@ -71,21 +82,21 @@ namespace maze {
         deltaY : 16,
         infoString : "下",
         spriteImage:img`
-            . . . . . . f f f f . . . . . .
-            . . . . f f f 2 2 f f f . . . .
-            . . . f f f 2 2 2 2 f f f . . .
-            . . f f f e e e e e e f f f . .
-            . . f f e 2 2 2 2 2 2 e e f . .
-            . . f e 2 f f f f f f 2 e f . .
-            . . f f f f e e e e f f f f . .
-            . f f e f b f 4 4 f b f e f f .
-            . f e e 4 1 f d d f 1 4 e e f .
-            . . f e e d d d d d d e e f . .
-            . . . f e e 4 4 4 4 e e f . . .
-            . . e 4 f 2 2 2 2 2 2 f 4 e . .
-            . . 4 d f 2 2 2 2 2 2 f d 4 . .
-            . . 4 4 f 4 4 5 5 4 4 f 4 4 . .
-            . . . . . f f f f f f . . . . .
+            . . . . . . 5 . 5 . . . . . . .
+            . . . . . f 5 5 5 f f . . . . .
+            . . . . f 1 5 2 5 1 6 f . . . .
+            . . . f 1 6 6 6 6 6 1 6 f . . .
+            . . . f 6 6 f f f f 6 1 f . . .
+            . . . f 6 f f d d f f 6 f . . .
+            . . f 6 f d f d d f d f 6 f . .
+            . . f 6 f d 3 d d 3 d f 6 f . .
+            . . f 6 6 f d d d d f 6 6 f . .
+            . f 6 6 f 3 f f f f 3 f 6 6 f .
+            . . f f d 3 5 3 3 5 3 d f f . .
+            . . f d d f 3 5 5 3 f d d f . .
+            . . . f f 3 3 3 3 3 3 f f . . .
+            . . . f 3 3 5 3 3 5 3 3 f . . .
+            . . . f f f f f f f f f f . . .
             . . . . . f f . . f f . . . . .
         `  
     }
@@ -95,21 +106,21 @@ namespace maze {
         deltaY : 0,
         infoString : "左",
         spriteImage:img`
-            . . . . f f f f f f . . . . . .
-            . . . f 2 f e e e e f f . . . .
-            . . f 2 2 2 f e e e e f f . . .
-            . . f e e e e f f e e e f . . .
-            . f e 2 2 2 2 e e f f f f . . .
-            . f 2 e f f f f 2 2 2 e f . . .
-            . f f f e e e f f f f f f f . .
-            . f e e 4 4 f b e 4 4 e f f . .
-            . . f e d d f 1 4 d 4 e e f . .
-            . . . f d d d d 4 e e e f . . .
-            . . . f e 4 4 4 e e f f . . . .
-            . . . f 2 2 2 e d d 4 . . . . .
-            . . . f 2 2 2 e d d e . . . . .
-            . . . f 5 5 4 f e e f . . . . .
-            . . . . f f f f f f . . . . . .
+            . . . . . . 5 . 5 . . . . . . .
+            . . . . . f 5 5 5 f . . . . . .
+            . . . . f 6 2 5 5 6 f . . . . .
+            . . . f 6 6 6 6 1 6 6 f . . . .
+            . . . f 6 6 6 6 6 1 6 f . . . .
+            . . . f d f d 6 6 6 1 f . . . .
+            . . . f d f d 6 6 6 6 f f . . .
+            . . . f d 3 d d 6 6 6 f 6 f . .
+            . . . . f d d d f f 6 f f . . .
+            . . . . . f f 5 3 f 6 6 6 f . .
+            . . . . f 5 3 3 f f f f f . . .
+            . . . . f 3 3 f d f . . . . . .
+            . . . . . f 3 f d f . . . . . .
+            . . . . f 3 5 3 f d f . . . . .
+            . . . . f f 3 3 f f . . . . . .
             . . . . . . f f f . . . . . . .
         `  
     }
@@ -119,6 +130,9 @@ namespace maze {
 
     let runnerSprite : Sprite = null;
     const RUNNER_SPRITE_KIND = SpriteKind.create();
+
+    let magicSprite :Sprite = null;
+    const MAGIC_SPRITE_KIND = SpriteKind.create();
 
     let noPause :boolean = false;
     const DEFAULT_STEP_PAUSE_MILLIS = 500;
@@ -176,13 +190,11 @@ namespace maze {
     let levelTilemaps :tiles.TileMapData[] = [level1tilemap, level2tilemap,level3tilemap,randomLevel(4),randomLevel(5)];
 
     let levelCallbacks : (() => void) [] = [];
-    //前方是否可以前进
-    function directionAvailable(direction: CollisionDirection) {
-       //let frontTileX = 0
-       //let frontTileY = 0
-       let frontTileXDelta = 0
-       let frontTileYDelta = 0
-       switch(direction){
+    //获取前方图块
+    function getFrontLoc(direction: CollisionDirection){
+        let frontTileXDelta = 0
+        let frontTileYDelta = 0
+        switch(direction){
            case CollisionDirection.Bottom:
            frontTileYDelta+=16
            break
@@ -196,9 +208,19 @@ namespace maze {
            frontTileXDelta+=16
            break
         }
-        let frontTileX = (frontTileXDelta+runnerSprite.x)/16
-        let frontTileY = (frontTileYDelta+runnerSprite.y)/16
 
+        let frontLocation:FrontLocation = {
+            tileX:(frontTileXDelta+runnerSprite.x)/16,
+            tileY:(frontTileYDelta+runnerSprite.y)/16
+        }
+        return frontLocation
+    }
+    //前方是否可以前进
+    //返回值：0-可以通过，1-有墙，2-有石头
+    function directionAvailable(direction: CollisionDirection):number {
+        let frontLocation :FrontLocation = getFrontLoc(direction)
+        let frontTileX = frontLocation.tileX
+        let frontTileY = frontLocation.tileY
         if(tiles.tileAtLocationEquals(tiles.getTileLocation(frontTileX, frontTileY), img`
             b d d d d d d d d d d d d d d c
             d b b b b b b b b b b b b b b c
@@ -285,9 +307,12 @@ namespace maze {
             c c 6 c 6 c 6 6 c 6 7 c 6 7 7 6
             c c 6 c c c 6 6 c 6 6 c 6 7 7 6
         `)){
-            return false
+            return 1
             }
-        else  return true
+            else if(tiles.tileAtLocationEquals(tiles.getTileLocation(getFrontLoc(_currentDirection).tileX,getFrontLoc(_currentDirection).tileY), sprites.castle.rock0)){
+                return 2
+            }
+        else  return 0
     }   
 
     //% block="我是 %name, 将速度设定 %speed" weight="2000"
@@ -347,41 +372,41 @@ namespace maze {
     function initMaze(level:number) {
         if (runnerSprite == null) {
             runnerSprite = sprites.create(img`
-                . . . . . . f f f f . . . . . .
-                . . . . f f f 2 2 f f f . . . .
-                . . . f f f 2 2 2 2 f f f . . .
-                . . f f f e e e e e e f f f . .
-                . . f f e 2 2 2 2 2 2 e e f . .
-                . . f e 2 f f f f f f 2 e f . .
-                . . f f f f e e e e f f f f . .
-                . f f e f b f 4 4 f b f e f f .
-                . f e e 4 1 f d d f 1 4 e e f .
-                . . f e e d d d d d d e e f . .
-                . . . f e e 4 4 4 4 e e f . . .
-                . . e 4 f 2 2 2 2 2 2 f 4 e . .
-                . . 4 d f 2 2 2 2 2 2 f d 4 . .
-                . . 4 4 f 4 4 5 5 4 4 f 4 4 . .
-                . . . . . f f f f f f . . . . .
+                . . . . . . 5 . 5 . . . . . . .
+                . . . . . f 5 5 5 f f . . . . .
+                . . . . f 1 5 2 5 1 6 f . . . .
+                . . . f 1 6 6 6 6 6 1 6 f . . .
+                . . . f 6 6 f f f f 6 1 f . . .
+                . . . f 6 f f d d f f 6 f . . .
+                . . f 6 f d f d d f d f 6 f . .
+                . . f 6 f d 3 d d 3 d f 6 f . .
+                . . f 6 6 f d d d d f 6 6 f . .
+                . f 6 6 f 3 f f f f 3 f 6 6 f .
+                . . f f d 3 5 3 3 5 3 d f f . .
+                . . f d d f 3 5 5 3 f d d f . .
+                . . . f f 3 3 3 3 3 3 f f . . .
+                . . . f 3 3 5 3 3 5 3 3 f . . .
+                . . . f f f f f f f f f f . . .
                 . . . . . f f . . f f . . . . .
             `, RUNNER_SPRITE_KIND)
         } else {
             runnerSprite.say("")
             runnerSprite.setImage(img`
-                . . . . . . f f f f . . . . . .
-                . . . . f f f 2 2 f f f . . . .
-                . . . f f f 2 2 2 2 f f f . . .
-                . . f f f e e e e e e f f f . .
-                . . f f e 2 2 2 2 2 2 e e f . .
-                . . f e 2 f f f f f f 2 e f . .
-                . . f f f f e e e e f f f f . .
-                . f f e f b f 4 4 f b f e f f .
-                . f e e 4 1 f d d f 1 4 e e f .
-                . . f e e d d d d d d e e f . .
-                . . . f e e 4 4 4 4 e e f . . .
-                . . e 4 f 2 2 2 2 2 2 f 4 e . .
-                . . 4 d f 2 2 2 2 2 2 f d 4 . .
-                . . 4 4 f 4 4 5 5 4 4 f 4 4 . .
-                . . . . . f f f f f f . . . . .
+                . . . . . . 5 . 5 . . . . . . .
+                . . . . . f 5 5 5 f f . . . . .
+                . . . . f 1 5 2 5 1 6 f . . . .
+                . . . f 1 6 6 6 6 6 1 6 f . . .
+                . . . f 6 6 f f f f 6 1 f . . .
+                . . . f 6 f f d d f f 6 f . . .
+                . . f 6 f d f d d f d f 6 f . .
+                . . f 6 f d 3 d d 3 d f 6 f . .
+                . . f 6 6 f d d d d f 6 6 f . .
+                . f 6 6 f 3 f f f f 3 f 6 6 f .
+                . . f f d 3 5 3 3 5 3 d f f . .
+                . . f d d f 3 5 5 3 f d d f . .
+                . . . f f 3 3 3 3 3 3 f f . . .
+                . . . f 3 3 5 3 3 5 3 3 f . . .
+                . . . f f f f f f f f f f . . .
                 . . . . . f f . . f f . . . . .
             `)
         }
@@ -489,18 +514,68 @@ namespace maze {
 
     //% block="前进" weight="1700"
     export function forward() {
-        if (directionAvailable(_currentDirection)) {
-            moveInDirection(_currentDirection)                
-        } else {
-            runnerSprite.say("我撞墙了")
-        }
+            switch(directionAvailable(_currentDirection)){
+                case 0:
+                    moveInDirection(_currentDirection) 
+                    break
+                case 1:
+                    runnerSprite.say("撞墙啦！") 
+                    break
+                case 2:
+                  runnerSprite.say("有个大石头挡住我！") 
+                    break 
+            }
         pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
     }
 
-
+    //% block='前面是 %obstaleKind'
+    export function isObstaleAhead(choice:ObstaleKind):boolean{
+        if(choice==directionAvailable(_currentDirection)){
+            return true
+        }
+        else return false
+    }
     scene.onOverlapTile(RUNNER_SPRITE_KIND, sprites.dungeon.doorOpenNorth, function (sprite, location) {
         finishedCurrentLevel()    
     })
+
+    //% block="石头变猫咪"
+    export function operateMagic(){
+        let frontTileLoc = getFrontLoc(_currentDirection)
+        let magicSprite = sprites.create(img`
+            . . . . . . . . . . . . . . . .
+            . . . . . . . . . . . . . . . .
+            . . 1 . . . . . 1 . . . . . . .
+            . . 9 1 . . . . 9 1 . . . . . .
+            . . 9 9 . . . . 9 9 . . . . . .
+            . . . 9 . . . . . 9 . . . . . .
+            . . . . . . 1 . . . . . . . . .
+            . . . . . 9 1 . . . . . . . . .
+            . . . . . 9 9 1 . . . . . . . .
+            . . . . . . 9 . . . . . . . . .
+            . . . . . . . . . . . . . . . .
+            . . . . . . 1 . . . . 1 . . . .
+            . . . . . . 9 1 . . . 9 1 . . .
+            . . . . . . 9 9 . . . 9 9 . . .
+            . . . . . . . 9 . . . . 9 . . .
+            . . . . . . . . . . . . . . . .
+        `,MAGIC_SPRITE_KIND)
+        tiles.placeOnTile(magicSprite, tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY))
+        magicSprite.destroy(effects.coolRadial,500)
+        if(directionAvailable(_currentDirection)==2){
+            tiles.setTileAt(tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY), sprites.dungeon.floorLight2)
+        let cat = sprites.create(sprites.builtin.cat2)
+        tiles.placeOnTile(cat, tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY))
+        cat.say("喵？")
+        cat.ay=100
+        cat.vx=50
+        cat.vy=-50
+        pause(500)
+        cat.vy=-50
+        pause(500)
+        cat.destroy()
+        }
+    }
 
     let isNavigationMode = true
     let needIntroduction = true
