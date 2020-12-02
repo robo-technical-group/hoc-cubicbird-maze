@@ -10,6 +10,20 @@ namespace maze {
         //%block="最高速度"
         FASTER = 16
     }
+
+    export enum Level{
+        //%block="第一关"
+        ONE = 1,
+        //%block="第二关"
+        TWO = 2,
+        //%block="第三关"
+        THREE = 3,
+        //%block="第四关"
+        FOUR = 4,
+        //%block="第五关"
+        FIVE = 5
+    }
+
     export enum ObstaleKind{
         //%block="墙"
         Wall = 1,
@@ -127,7 +141,9 @@ namespace maze {
 
     let _levelResults :summary.ProblemResult[] = []
     let _challengerName :string = '方块鸟'
-    let _debugMode:false
+
+    // != -1 when in debug mode.
+    let _debugLevel = -1
 
     let runnerSprite : Sprite = null;
     const RUNNER_SPRITE_KIND = SpriteKind.create();
@@ -136,6 +152,8 @@ namespace maze {
     const MAGIC_SPRITE_KIND = SpriteKind.create();
 
     let noPause :boolean = false;
+    let _hitWallTimes = 0
+    let _magicTimes = 0
     const DEFAULT_STEP_PAUSE_MILLIS = 500;
 
     let playSpeed : number = GameSpeed.NORMAL;
@@ -320,6 +338,11 @@ namespace maze {
     export function startGame(name:string, speed:GameSpeed) {
         _challengerName = name
         playSpeed = speed
+    }
+
+    //% block="以测试模式开始%level" weight="1950"
+    export function debugGame(level:Level) {
+        _debugLevel = level
     }
 
     //% block="当进入第一关" weight="500"
@@ -521,6 +544,8 @@ namespace maze {
                     break
                 case 1:
                     runnerSprite.say("撞墙啦！") 
+                    scene.cameraShake()
+                    _hitWallTimes += 1
                     break
                 case 2:
                   runnerSprite.say("有个大石头挡住我！") 
@@ -529,7 +554,7 @@ namespace maze {
         pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
     }
 
-    //% block='前面是 %obstaleKind'
+    //% block='前面是 %obstaleKind' weight="1600"
     export function isObstaleAhead(choice:ObstaleKind):boolean{
         if(choice==directionAvailable(_currentDirection)){
             return true
@@ -540,7 +565,7 @@ namespace maze {
         finishedCurrentLevel()    
     })
 
-    //% block="石头变猫咪"
+    //% block="石头变猫咪" weight="1500"
     export function operateMagic(){
         let frontTileLoc = getFrontLoc(_currentDirection)
         let magicSprite = sprites.create(img`
@@ -565,20 +590,23 @@ namespace maze {
         magicSprite.destroy(effects.coolRadial,500)
         if(directionAvailable(_currentDirection)==2){
             tiles.setTileAt(tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY), sprites.dungeon.floorLight2)
-        let cat = sprites.create(sprites.builtin.cat2)
-        tiles.placeOnTile(cat, tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY))
-        cat.say("喵？")
-        cat.ay=100
-        cat.vx=50
-        cat.vy=-50
-        pause(500)
-        cat.vy=-50
-        pause(500)
-        cat.destroy()
+            let cat = sprites.create(sprites.builtin.cat2)
+            tiles.placeOnTile(cat, tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY))
+        
+            cat.say("喵？")
+            cat.ay=100
+            cat.vx=50
+            cat.vy=-50
+            pause(500)
+            cat.vy=-50
+            pause(500)
+            cat.destroy()
+
+            _magicTimes += 1
         }
     }
 
-    let isNavigationMode = true
+    let isNavigationMode = false
     let needIntroduction = true
 
     let _navigatingLevel = 0
@@ -664,12 +692,19 @@ namespace maze {
         }
     })
 
-    control.runInParallel(function() {
+    function runInDebugMode() {
+        while(levelCallbacks[_debugLevel] == null);
+        initMaze(_debugLevel)
+    }
+
+
+    function normalRun() {
         summary.introScreen(1000)
 
         if (settings.exists("navigatingLevel")) {
             _navigatingLevel = settings.readNumber("navigatingLevel") 
         }
+        isNavigationMode = true
         navigateLevel(_navigatingLevel)
         while(isNavigationMode) {
             pause(100)
@@ -682,6 +717,18 @@ namespace maze {
             initMaze(_mazeLevel)
             while(!levelFinished) ;
         }
+
+        _levelResults.push({
+            line:"Hit wall " + _hitWallTimes + " times",
+            isCorrect:_hitWallTimes == 0,
+            oneline:true
+        })
+
+        _levelResults.push({
+            line:"Cast magic " + _magicTimes + " times",
+            isCorrect:_magicTimes > 0,
+            oneline:true
+        })
 
         summary.setUpSummaryScene(_challengerName, img`
             . . . . . . . . . . . . . . . .
@@ -702,6 +749,18 @@ namespace maze {
             . . . . . . . . . . . . . . . .
         `)
         summary.textUp(_levelResults)
+    }
+
+    control.runInParallel(function() {
+        scene.centerCameraAt(80, 64)
+
+        if(_debugLevel != -1) {
+            isNavigationMode = false
+            
+            runInDebugMode()    
+        } else {
+            normalRun()
+        }
     })
     
 }
