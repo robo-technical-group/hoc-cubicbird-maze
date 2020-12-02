@@ -116,6 +116,7 @@ namespace maze {
 
     let _levelResults :summary.ProblemResult[] = []
     let _challengerName :string = '方块鸟'
+    let _debugMode:false
 
     let runnerSprite : Sprite = null;
     const RUNNER_SPRITE_KIND = SpriteKind.create();
