@@ -1,4 +1,4 @@
-// %block="编程一小时" %groups='["走迷宫"]'
+//%block="公主大冒险" %groups='["游戏控制", "控制公主"]'
 //% weight=100 color=#6699CC icon="\u2593"
 namespace maze {
 
@@ -336,35 +336,156 @@ namespace maze {
         else  return 0
     }   
 
-    //% block="我是 %name, 将速度设定 %speed" weight="2000"
+    //% block="左转" weight="1900" group="控制公主"
+    export function turnLeft() {
+        if (_currentDirection == CollisionDirection.Top) {
+            _currentDirection = CollisionDirection.Left
+            runnerSprite.setImage(LEFT.spriteImage)
+        } else if (_currentDirection == CollisionDirection.Left) {
+            _currentDirection = CollisionDirection.Bottom
+            runnerSprite.setImage(DOWN.spriteImage)
+        } else if (_currentDirection == CollisionDirection.Bottom) {
+            _currentDirection = CollisionDirection.Right
+            runnerSprite.setImage(RIGHT.spriteImage)
+        } else {
+            _currentDirection = CollisionDirection.Top
+            runnerSprite.setImage(UP.spriteImage)
+        }
+        runnerSprite.say('左转')
+        pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
+    }
+
+    //% block="右转" weight="1800" group="控制公主"
+    export function turnRight() {
+        if (_currentDirection == CollisionDirection.Top) {
+            _currentDirection = CollisionDirection.Right
+            runnerSprite.setImage(RIGHT.spriteImage)
+        } else if (_currentDirection == CollisionDirection.Right) {
+            _currentDirection = CollisionDirection.Bottom
+            runnerSprite.setImage(DOWN.spriteImage)
+        } else if (_currentDirection == CollisionDirection.Bottom) {
+            _currentDirection = CollisionDirection.Left
+            runnerSprite.setImage(LEFT.spriteImage)
+        } else {
+            _currentDirection = CollisionDirection.Top
+            runnerSprite.setImage(UP.spriteImage)
+        }
+        runnerSprite.say('右转')
+        pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
+    }
+
+    //% block="前进" weight="1700" group="控制公主"
+    export function forward() {
+            switch(directionAvailable(_currentDirection)){
+                case 0:
+                    moveInDirection(_currentDirection) 
+                    break
+                case 1:
+                    runnerSprite.say("撞墙啦！") 
+                    scene.cameraShake()
+                    _hitWallTimes += 1
+                    break
+                case 2:
+                  runnerSprite.say("有个大石头挡住我！") 
+                    break 
+            }
+        pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
+    }
+
+    //% block='前面是 %obstaleKind' weight="1600" group="控制公主"
+    export function isObstaleAhead(choice:ObstaleKind):boolean{
+        if(choice==directionAvailable(_currentDirection)){
+            return true
+        }
+        else return false
+    }
+    scene.onOverlapTile(RUNNER_SPRITE_KIND, sprites.dungeon.doorOpenNorth, function (sprite, location) {
+        finishedCurrentLevel()    
+    })
+
+    //% block="石头变猫咪" weight="1500" group="控制公主"
+    export function operateMagic(){
+        let frontTileLoc = getFrontLoc(_currentDirection)
+        let magicSprite = sprites.create(img`
+            . . . . . . . . . . . . . . . .
+            . . . . . . . . . . . . . . . .
+            . . 1 . . . . . 1 . . . . . . .
+            . . 9 1 . . . . 9 1 . . . . . .
+            . . 9 9 . . . . 9 9 . . . . . .
+            . . . 9 . . . . . 9 . . . . . .
+            . . . . . . 1 . . . . . . . . .
+            . . . . . 9 1 . . . . . . . . .
+            . . . . . 9 9 1 . . . . . . . .
+            . . . . . . 9 . . . . . . . . .
+            . . . . . . . . . . . . . . . .
+            . . . . . . 1 . . . . 1 . . . .
+            . . . . . . 9 1 . . . 9 1 . . .
+            . . . . . . 9 9 . . . 9 9 . . .
+            . . . . . . . 9 . . . . 9 . . .
+            . . . . . . . . . . . . . . . .
+        `,MAGIC_SPRITE_KIND)
+        tiles.placeOnTile(magicSprite, tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY))
+        magicSprite.destroy(effects.coolRadial,500)
+        if(directionAvailable(_currentDirection)==2){
+            tiles.setTileAt(tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY), sprites.dungeon.floorLight2)
+            let cat = sprites.create(sprites.builtin.cat2)
+            tiles.placeOnTile(cat, tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY))
+        
+            cat.say("喵？")
+            cat.ay=100
+            cat.vx=50
+            cat.vy=-50
+            pause(500)
+            cat.vy=-50
+            pause(500)
+            cat.destroy()
+
+            _magicTimes += 1
+        }
+    }
+
+    let isNavigationMode = false
+    let needIntroduction = true
+
+    let _navigatingLevel = 0
+    const START_POINT_SPRITE_IN_NAVI_SPRITE_KIND = SpriteKind.create()
+
+    function destroyAllNaviSprites() {
+        for (let sprite of sprites.allOfKind(START_POINT_SPRITE_IN_NAVI_SPRITE_KIND)) {
+            sprite.destroy()
+        }
+    }
+
+
+    //% block="我是 %name, 将速度设定 %speed" weight="2000" group="游戏控制"
     export function startGame(name:string, speed:GameSpeed) {
         _challengerName = name
         playSpeed = speed
     }
 
-    //% block="以测试模式开始%level" weight="1950"
+    //% block="以测试模式开始%level" weight="1950" group="游戏控制"
     export function debugGame(level:Level) {
         _debugLevel = level
     }
 
-    //% block="当进入第一关" weight="500"
+    //% block="当进入第一关" weight="500" group="游戏控制"
     export function onLevelOne(cb:()=>void) {
         levelCallbacks.set(0, cb)
     }
 
-    //% block="当进入第二关" weight="400"
+    //% block="当进入第二关" weight="400" group="游戏控制"
     export function onLevelTwo(cb:()=>void) {
         levelCallbacks.set(1, cb)
     }
-    //% block="当进入第三关" weight="300"
+    //% block="当进入第三关" weight="300" group="游戏控制"
     export function onLevelThree(cb:()=>void) {
         levelCallbacks.set(2, cb)
     }
-    //% block="当进入第四关" weight="200"
+    //% block="当进入第四关" weight="200" group="游戏控制"
     export function onLevelFour(cb:()=>void) {
         levelCallbacks.set(3, cb)
     }
-    //% block="当进入第五关" weight="100"
+    //% block="当进入第五关" weight="100" group="游戏控制"
     export function onLevelFive(cb:()=>void) {
         levelCallbacks.set(4, cb)
     }
@@ -500,126 +621,7 @@ namespace maze {
         runnerSprite.say('前进')        
     }
     
-    //% block="左转" weight="1900"
-    export function turnLeft() {
-        if (_currentDirection == CollisionDirection.Top) {
-            _currentDirection = CollisionDirection.Left
-            runnerSprite.setImage(LEFT.spriteImage)
-        } else if (_currentDirection == CollisionDirection.Left) {
-            _currentDirection = CollisionDirection.Bottom
-            runnerSprite.setImage(DOWN.spriteImage)
-        } else if (_currentDirection == CollisionDirection.Bottom) {
-            _currentDirection = CollisionDirection.Right
-            runnerSprite.setImage(RIGHT.spriteImage)
-        } else {
-            _currentDirection = CollisionDirection.Top
-            runnerSprite.setImage(UP.spriteImage)
-        }
-        runnerSprite.say('左转')
-        pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
-    }
-
-    //% block="右转" weight="1800"
-    export function turnRight() {
-        if (_currentDirection == CollisionDirection.Top) {
-            _currentDirection = CollisionDirection.Right
-            runnerSprite.setImage(RIGHT.spriteImage)
-        } else if (_currentDirection == CollisionDirection.Right) {
-            _currentDirection = CollisionDirection.Bottom
-            runnerSprite.setImage(DOWN.spriteImage)
-        } else if (_currentDirection == CollisionDirection.Bottom) {
-            _currentDirection = CollisionDirection.Left
-            runnerSprite.setImage(LEFT.spriteImage)
-        } else {
-            _currentDirection = CollisionDirection.Top
-            runnerSprite.setImage(UP.spriteImage)
-        }
-        runnerSprite.say('右转')
-        pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
-    }
-
-    //% block="前进" weight="1700"
-    export function forward() {
-            switch(directionAvailable(_currentDirection)){
-                case 0:
-                    moveInDirection(_currentDirection) 
-                    break
-                case 1:
-                    runnerSprite.say("撞墙啦！") 
-                    scene.cameraShake()
-                    _hitWallTimes += 1
-                    break
-                case 2:
-                  runnerSprite.say("有个大石头挡住我！") 
-                    break 
-            }
-        pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
-    }
-
-    //% block='前面是 %obstaleKind' weight="1600"
-    export function isObstaleAhead(choice:ObstaleKind):boolean{
-        if(choice==directionAvailable(_currentDirection)){
-            return true
-        }
-        else return false
-    }
-    scene.onOverlapTile(RUNNER_SPRITE_KIND, sprites.dungeon.doorOpenNorth, function (sprite, location) {
-        finishedCurrentLevel()    
-    })
-
-    //% block="石头变猫咪" weight="1500"
-    export function operateMagic(){
-        let frontTileLoc = getFrontLoc(_currentDirection)
-        let magicSprite = sprites.create(img`
-            . . . . . . . . . . . . . . . .
-            . . . . . . . . . . . . . . . .
-            . . 1 . . . . . 1 . . . . . . .
-            . . 9 1 . . . . 9 1 . . . . . .
-            . . 9 9 . . . . 9 9 . . . . . .
-            . . . 9 . . . . . 9 . . . . . .
-            . . . . . . 1 . . . . . . . . .
-            . . . . . 9 1 . . . . . . . . .
-            . . . . . 9 9 1 . . . . . . . .
-            . . . . . . 9 . . . . . . . . .
-            . . . . . . . . . . . . . . . .
-            . . . . . . 1 . . . . 1 . . . .
-            . . . . . . 9 1 . . . 9 1 . . .
-            . . . . . . 9 9 . . . 9 9 . . .
-            . . . . . . . 9 . . . . 9 . . .
-            . . . . . . . . . . . . . . . .
-        `,MAGIC_SPRITE_KIND)
-        tiles.placeOnTile(magicSprite, tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY))
-        magicSprite.destroy(effects.coolRadial,500)
-        if(directionAvailable(_currentDirection)==2){
-            tiles.setTileAt(tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY), sprites.dungeon.floorLight2)
-            let cat = sprites.create(sprites.builtin.cat2)
-            tiles.placeOnTile(cat, tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY))
-        
-            cat.say("喵？")
-            cat.ay=100
-            cat.vx=50
-            cat.vy=-50
-            pause(500)
-            cat.vy=-50
-            pause(500)
-            cat.destroy()
-
-            _magicTimes += 1
-        }
-    }
-
-    let isNavigationMode = false
-    let needIntroduction = true
-
-    let _navigatingLevel = 0
-    const START_POINT_SPRITE_IN_NAVI_SPRITE_KIND = SpriteKind.create()
-
-    function destroyAllNaviSprites() {
-        for (let sprite of sprites.allOfKind(START_POINT_SPRITE_IN_NAVI_SPRITE_KIND)) {
-            sprite.destroy()
-        }
-    }
-
+    
     let navigatingTimestamp = 0
 
     function navigateLevel(level : number) {
