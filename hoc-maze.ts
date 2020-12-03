@@ -234,7 +234,8 @@ namespace maze {
         }
         return frontLocation
     }
-    //前方是否可以前进
+    //前方是否可以前进 "sprites.dungeon.hazardLava0",
+            "sprites.dungeon.hazardLava1"
     //返回值：0-可以通过，1-有墙，2-有石头
     function directionAvailable(direction: CollisionDirection):number {
         let frontLocation :FrontLocation = getFrontLoc(direction)
@@ -325,7 +326,8 @@ namespace maze {
             c c 6 c 6 c 6 6 c 6 7 c c 7 7 6
             c c 6 c 6 c 6 6 c 6 7 c 6 7 7 6
             c c 6 c c c 6 6 c 6 6 c 6 7 7 6
-        `)){
+        `) ||tiles.tileAtLocationEquals(tiles.getTileLocation(frontTileX, frontTileY), sprites.dungeon.hazardLava0) 
+        || tiles.tileAtLocationEquals(tiles.getTileLocation(frontTileX, frontTileY),sprites.dungeon.hazardLava1) ){
             return 1
             }
             else if(tiles.tileAtLocationEquals(tiles.getTileLocation(getFrontLoc(_currentDirection).tileX,getFrontLoc(_currentDirection).tileY), sprites.castle.rock0)){
@@ -693,7 +695,7 @@ namespace maze {
     })
 
     function runInDebugMode() {
-        while(levelCallbacks[_debugLevel] == null);
+        while(levelCallbacks[_debugLevel - 1] == null);
         initMaze(_debugLevel)
     }
 
