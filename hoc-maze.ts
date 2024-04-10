@@ -1,40 +1,59 @@
-//%block="公主大冒险" %groups='["游戏控制", "控制公主"]'
+//%block="Princess's Adventure"
+//%block.loc.zh="公主大冒险" 
+//%groups='["Game controls","Princess controls"]
+//%groups.loc.zh='["游戏控制", "控制公主"]'
 //% weight=100 color=#6699CC icon="\u2593"
 namespace maze {
+    export enum Language {
+        //%block="简体中文"
+        CHINESE_SIMPLIFIED = 0,
+        //%block="English"
+        ENGLISH = 1
+    }
 
     export enum GameSpeed {
-        //%block="正常速度"
+        //%block="normal"
+        //%block.loc.zh="正常速度"
         NORMAL = 1,
-        //%block="较高速度"
+        //%block="fast"
+        //%block.loc.zh="较高速度"
         FAST = 4,
-        //%block="最高速度"
+        //%block="faster"
+        //%block.loc.zh="最高速度"
         FASTER = 16
     }
 
     export enum Level{
-        //%block="第一关"
+        //%block="level one"
+        //%block.loc.zh="第一关"
         ONE = 1,
-        //%block="第二关"
+        //%block="level two"
+        //%block.loc.zh="第二关"
         TWO = 2,
-        //%block="第三关"
+        //%block="level three"
+        //%block.loc.zh="第三关"
         THREE = 3,
-        //%block="第四关"
+        //%block="level four"
+        //%block.loc.zh="第四关"
         FOUR = 4,
-        //%block="第五关"
+        //%block="level five"
+        //%block.loc.zh="第五关"
         FIVE = 5
     }
 
     export enum ObstaleKind{
-        //%block="墙"
+        //%block="wall"
+        //%block.loc.zh="墙"
         Wall = 1,
-        //%block="巨石"
+        //%block="stone"
+        //%block.loc.zh="巨石"
         Stone = 2
     }
 
     interface DirectionMeta {
         deltaX :number
         deltaY :number
-        infoString:string
+        infoString:string[]
         spriteImage:Image
     }
     interface FrontLocation{
@@ -46,7 +65,7 @@ namespace maze {
     const UP = {
         deltaX : 0,
         deltaY : -16,
-        infoString : "上",
+        infoString : ["上", "up"],
         spriteImage:img`
             . . . . . . . 5 5 . . . . . . .
             . . . . . f 5 5 5 5 f . . . . .
@@ -70,7 +89,7 @@ namespace maze {
     const RIGHT = {
         deltaX : 16,
         deltaY : 0,
-        infoString : "右",
+        infoString : ["右", "turn right"],
         spriteImage:img`
             . . . . . . . 5 . 5 . . . . . .
             . . . . . . f 5 5 5 f . . . . .
@@ -94,7 +113,7 @@ namespace maze {
     const DOWN = {
         deltaX : 0,
         deltaY : 16,
-        infoString : "下",
+        infoString : ["下", "forward"],
         spriteImage:img`
             . . . . . . 5 . 5 . . . . . . .
             . . . . . f 5 5 5 f f . . . . .
@@ -118,7 +137,7 @@ namespace maze {
     const LEFT = {
         deltaX : -16,
         deltaY : 0,
-        infoString : "左",
+        infoString : ["左", "turn left"],
         spriteImage:img`
             . . . . . . 5 . 5 . . . . . . .
             . . . . . f 5 5 5 f . . . . . .
@@ -139,8 +158,9 @@ namespace maze {
         `  
     }
 
+    let _lang: number = 1
     let _levelResults :summary.ProblemResult[] = []
-    let _challengerName :string = '方块鸟'
+    let _challengerName :string = ['方块鸟', "Birdie"][_lang]
 
     // != -1 when in debug mode.
     let _debugLevel = -1
@@ -336,7 +356,8 @@ namespace maze {
         else  return 0
     }   
 
-    //% block="左转" weight="1900" group="控制公主"
+    //%block="left" weight="1900" group="Princess controls"
+    //%block.loc.zh="左转" group.loc.zh="控制公主"
     export function turnLeft() {
         if (_currentDirection == CollisionDirection.Top) {
             _currentDirection = CollisionDirection.Left
@@ -351,11 +372,12 @@ namespace maze {
             _currentDirection = CollisionDirection.Top
             runnerSprite.setImage(UP.spriteImage)
         }
-        runnerSprite.say('左转')
+        runnerSprite.say(['左转',"turn left"][_lang])
         pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
     }
 
-    //% block="右转" weight="1800" group="控制公主"
+    //%block="right" weight="1800" group="Princess controls"
+    //%block.loc.zh="右转" group.loc.zh="控制公主"
     export function turnRight() {
         if (_currentDirection == CollisionDirection.Top) {
             _currentDirection = CollisionDirection.Right
@@ -370,29 +392,36 @@ namespace maze {
             _currentDirection = CollisionDirection.Top
             runnerSprite.setImage(UP.spriteImage)
         }
-        runnerSprite.say('右转')
+        runnerSprite.say(['右转', "turn right"][_lang])
         pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
     }
 
-    //% block="前进" weight="1700" group="控制公主"
+    //% block="forward" weight="1700" group="Princess controls"
+    //% block.loc.zh="前进" group.loc.zh="控制公主"
     export function forward() {
             switch(directionAvailable(_currentDirection)){
                 case 0:
                     moveInDirection(_currentDirection) 
                     break
                 case 1:
-                    runnerSprite.say("撞墙啦！") 
+                    runnerSprite.say([
+                        "撞墙啦！", "Hit a wall!"
+                    ][_lang]) 
                     scene.cameraShake()
                     _hitWallTimes += 1
                     break
                 case 2:
-                  runnerSprite.say("有个大石头挡住我！") 
+                  runnerSprite.say([
+                      "有个大石头挡住我！",
+                      "There's a big rock blocking me!"
+                  ][_lang]) 
                     break 
             }
         pauseImpl(DEFAULT_STEP_PAUSE_MILLIS)
     }
 
-    //% block='前面是 %obstaleKind' weight="1600" group="控制公主"
+    //% block='obstacle kind is %obstaleKind' weight="1600" group="Princess controls"
+    //% block.loc.zh='前面是 %obstaleKind' group.loc.zh="控制公主"
     export function isObstaleAhead(choice:ObstaleKind):boolean{
         if(choice==directionAvailable(_currentDirection)){
             return true
@@ -403,7 +432,8 @@ namespace maze {
         finishedCurrentLevel()    
     })
 
-    //% block="石头变猫咪" weight="1500" group="控制公主"
+    //% block="cast spell" weight="1500" group="Princess controls"
+    //% block.loc.zh="石头变猫咪" group.loc.zh="控制公主"
     export function operateMagic(){
         let frontTileLoc = getFrontLoc(_currentDirection)
         let magicSprite = sprites.create(img`
@@ -431,7 +461,7 @@ namespace maze {
             let cat = sprites.create(sprites.builtin.cat2)
             tiles.placeOnTile(cat, tiles.getTileLocation(frontTileLoc.tileX, frontTileLoc.tileY))
         
-            cat.say("喵？")
+            cat.say(["喵？", "Meow?"][_lang])
             cat.ay=100
             cat.vx=50
             cat.vy=-50
@@ -456,36 +486,51 @@ namespace maze {
         }
     }
 
+    //%block="set language to %lang" weight="0" group="Game controls"
+    //%block.loc.zh="将语言设置为%lang" group.loc.zh="游戏控制"
+    export function setLanguage(lang: Language): void {
+        _lang = lang
+    }
 
-    //% block="我是 %name, 将速度设定 %speed" weight="2000" group="游戏控制"
+    //%block="start name %name, speed %speed" weight="2000" group="Game controls"
+    //%block.loc.zh="我是 %name, 将速度设定 %speed" group.loc.zh="游戏控制"
     export function startGame(name:string, speed:GameSpeed) {
         _challengerName = name
         playSpeed = speed
     }
 
-    //% block="以测试模式开始%level" weight="1950" group="游戏控制"
+    //%block="start in test mode level %level" weight="1950" group="Game controls"
+    //%block.loc.zh="以测试模式开始%level" group.loc.zh="游戏控制"
     export function debugGame(level:Level) {
         _debugLevel = level
     }
 
-    //% block="当进入第一关" weight="500" group="游戏控制"
+    //%block="on level one" weight="500" group="Game controls"
+    //%block.loc.zh="当进入第一关" group.loc.zh="游戏控制"
     export function onLevelOne(cb:()=>void) {
         levelCallbacks.set(0, cb)
     }
 
-    //% block="当进入第二关" weight="400" group="游戏控制"
+    //%block="on level two" weight="400" group="Game controls"
+    //%block.loc.zh="当进入第二关" group.loc.zh="游戏控制"
     export function onLevelTwo(cb:()=>void) {
         levelCallbacks.set(1, cb)
     }
-    //% block="当进入第三关" weight="300" group="游戏控制"
+
+    //%block="on level three" weight="300" group="Game controls"
+    //%block.loc.zh="当进入第三关" group.loc.zh="游戏控制"
     export function onLevelThree(cb:()=>void) {
         levelCallbacks.set(2, cb)
     }
-    //% block="当进入第四关" weight="200" group="游戏控制"
+
+    //%block="on level four" weight="200" group="Game controls"
+    //%block.loc.zh="当进入第四关" group.loc.zh="游戏控制"
     export function onLevelFour(cb:()=>void) {
         levelCallbacks.set(3, cb)
     }
-    //% block="当进入第五关" weight="100" group="游戏控制"
+
+    //%block="on level five" weight="100" group="Game controls"
+    //%block.loc.zh="当进入第五关" group.loc.zh="游戏控制"
     export function onLevelFive(cb:()=>void) {
         levelCallbacks.set(4, cb)
     }
@@ -566,18 +611,30 @@ namespace maze {
         runnerLoading()
 
         if (levelCallbacks[level - 1] == null) {
-            runnerSprite.say("第" + level + "关的程序载入失败")
+            runnerSprite.say([
+                "第" + level + "关的程序载入失败",
+                "Level " + level +" failed to load."
+            ][_lang])
             pauseImpl(2000)
-            runnerSprite.say("请在'当进入第" + level + "关'内写好程序")
+            runnerSprite.say([
+                "请在'当进入第" + level + "关'内写好程序",
+                "Please write the program 'run code on level " + level + "'."
+            ][_lang])
             pauseImpl(5000)
         } else {
-            runnerSprite.say("开始按程序运行")        
+            runnerSprite.say([
+                "开始按程序运行",
+                "Starting program."
+            ][_lang])
             pauseImpl(1000)
 
             levelCallbacks[level-1]()
 
             if (!levelFinished) {           
-                runnerSprite.say("没有指令了，不知道接下来要做什么")
+                runnerSprite.say([
+                    "没有指令了，不知道接下来要做什么",
+                    "There are no more instructions."
+                ][_lang])
                 pauseImpl(1000)
                 _levelResults.push({
                     line:"Level " + level,
@@ -618,7 +675,7 @@ namespace maze {
 
         runnerSprite.setImage(directionMeta.spriteImage)
 
-        runnerSprite.say('前进')        
+        runnerSprite.say(directionMeta.infoString[_lang])
     }
     
     
@@ -651,21 +708,36 @@ namespace maze {
 
         if (needIntroduction) {
             needIntroduction = false
-            game.splash("按左右方向键切换浏览关卡")
-            game.splash("按menu开始正式挑战")
+            game.splash([
+                "按左右方向键切换浏览关卡",
+                "Use left and right to move through the level."
+            ][_lang])
+            game.splash([
+                "按menu开始正式挑战",
+                "Press the menu button to begin."
+            ][_lang])
         }
 
         navigatingTimestamp = game.runtime()
         
-        game.splash("第" + (level+1).toString() + "关地图")
+        game.splash([
+            "第" + (level+1).toString() + "关地图",
+            "Level " + (level+1).toString() + " map"
+        ][_lang])
     }
 
     // 万一用户不记得如何操作，每隔10秒告诉他一下menu可以开始挑战
     forever(function() {
         if (isNavigationMode) {
             if (game.runtime() - navigatingTimestamp > 10000) {
-                game.splash("按左右方向键切换浏览关卡")
-                game.splash("按menu开始正式挑战")   
+                game.splash([
+                    "按左右方向键切换浏览关卡",
+                    "Use left and right to move through the level."
+                ][_lang])
+                game.splash([
+                    "按menu开始正式挑战",
+                    "Press the menu button to begin."
+                ][_lang])
                 navigatingTimestamp = game.runtime()     
             }
         }
@@ -690,7 +762,9 @@ namespace maze {
         if (!isNavigationMode) {
             return
         }
-        if (game.ask("开始挑战")) {
+        if (game.ask([
+            "开始挑战", "Start the challenge?"
+        ][_lang])) {
             isNavigationMode = false
             destroyAllNaviSprites()
         }
@@ -698,7 +772,7 @@ namespace maze {
 
     function runInDebugMode() {
         while(levelCallbacks[_debugLevel - 1] == null);
-        initMaze(_debugLevel)
+            initMaze(_debugLevel)
     }
 
 
@@ -713,7 +787,7 @@ namespace maze {
         while(isNavigationMode) {
             pause(100)
         }
-        initMaze(_mazeLevel)    
+        initMaze(_mazeLevel)
 
         while (_mazeLevel != levelTilemaps.length) {
             _mazeLevel += 1
