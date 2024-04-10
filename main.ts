@@ -1,20 +1,11 @@
 /**
- * main.ts
- */
-/**
  * Guide our princess out of dungeon by giving her instructions.
  * 
- * Can interact with maze item using instructions under 'Maze'
+ * Can interact with maze item using instructions under "Princess's Adventure."
  */
 // Write level code here.
 maze.onLevelOne(function () {
-    for (let index = 0; index < 5; index++) {
-        maze.forward()
-    }
-    maze.turnLeft()
-    for (let index = 0; index < 7; index++) {
-        maze.forward()
-    }
+	
 })
 maze.onLevelThree(function () {
 	
